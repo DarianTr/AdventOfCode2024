@@ -33,11 +33,10 @@ struct QElement {
 
 
 
-int dijkstra(vector<string> &m, pair<int, int> start, char target, int start_dir) {
-    map<MapIndex, INT> map;
+int dijkstra(vector<string> &m, pair<int, int> start, char target, int start_dir, map<MapIndex, INT> &map) {
     priority_queue<QElement> pq;
     int lowestEnd = INT32_MAX;
-    pq.push({0, start.first, start.second, 0});
+    pq.push({0, start.first, start.second, start_dir});
     while (!pq.empty()) {
         auto a = pq.top();
         pq.pop();
@@ -55,33 +54,27 @@ int dijkstra(vector<string> &m, pair<int, int> start, char target, int start_dir
     return lowestEnd;
 }
 
-int part2(vector<string> &m, pair<int, int> start) {
-    map<pair<int, int>, INT> mapE;
-    map<pair<int, int>, INT> mapS;
-    for (int x1{}; x1 < m.size(); x1++) {
-        for (int y1{}; y1 < m[0].size(); y1++) {
-            if (m[x1][y1] == '#') continue;
-            int mres = INT32_MAX/3, mres2 =INT32_MAX/3;
-            for (int i{}; i < 4; i++) {
-                int res = dijkstra(m, {x1, y1}, 'S', i);
-                int res2 = dijkstra(m, {x1, y1}, 'E', (i + 2)%4);
-                if (res + res2 <= mres + mres2) {
-                    mres = res;
-                    mres2 = res2;
-                }
-            }
-            if (mres == INT32_MAX/3 || mres2 == INT32_MAX/3) continue;
-            mapS[{x1, y1}] = {mres};
-            mapE[{x1, y1}] = {mres2};
-        }
-    }
+int part2(vector<string> &m, pair<int, int> start, pair<int, int> end) {
+    map<MapIndex, INT> mapS;
+    map<MapIndex, INT> mapE;
+    int res = dijkstra(m, {start}, 'E', 0, mapS);
+    int res2 = dijkstra(m, {end}, 'S', 2, mapE); //hardcoded from input
+//    map<pair<int, int>, INT> mapE;
+//    map<pair<int, int>, INT> mapS;
     int count = 0;
     for (int x1{}; x1 < m.size(); x1++) {
         for (int y1{}; y1 < m[0].size(); y1++) {
-            if (mapS[{x1, y1}].value + mapE[{x1, y1}].value == mapE[start].value) {
-                count++;
-                m[x1][y1] = 'O';
+            if (m[x1][y1] == '#') continue;
+            bool flag = false;
+            for (int d{}; d < 4; d++) {
+                MapIndex mi = {x1, y1, d};
+                MapIndex mi2 = {x1, y1, (d + 2) % 4};
+                if (mapS[mi].value + mapE[mi2].value == res) {
+                    flag |= true;
+                    m[x1][y1] = 'O';
+                }
             }
+            if (flag) count++;
         }
     }
     return count;
@@ -96,10 +89,19 @@ pair<int, int> get_start(vector<string> &m) {
     return {-1, -1};
 }
 
+pair<int, int> get_end(vector<string> &m) {
+    for (int i{}; i < m.size(); i++) {
+        for (int j{}; j < m[0].size(); j++) {
+            if (m[i][j] == 'E') return {i, j};
+        }
+    }
+    return {-1, -1};
+}
+
 int main() {
     vector<string> maze;
     string line;
     while (getline(cin, line) && !line.empty()) maze.push_back(line);
 //    cout << dijkstra(maze, get_start(maze), 'E') << endl; part 1
-    cout << part2(maze, get_start(maze)) << endl;
+    cout << part2(maze, get_start(maze), get_end(maze)) << endl;
 }
